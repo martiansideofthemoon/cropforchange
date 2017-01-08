@@ -5,7 +5,7 @@ import time
 import itertools
 import os
 
-from multiprocessing import Pool
+import multiprocessing
 
 # constants
 num_crops = 5
@@ -62,6 +62,6 @@ def generate_data(iterations):
 
 
 if __name__ == '__main__':
-    pool = Pool(processes=5)
-    inp_array = [range(10) for i in range(10)]
+    pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
+    inp_array = [range(100) for i in range(100)]
     pool.map(generate_data, inp_array)
