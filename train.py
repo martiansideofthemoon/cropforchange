@@ -108,8 +108,8 @@ def main(_):
   # points = np.array(points)
   # plt.plot(points[:,0],points[:,1],linewidth=2.0)
   # plt.show()
-  import pdb
-  pdb.set_trace()
+    import pdb
+    pdb.set_trace()
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
