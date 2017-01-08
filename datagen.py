@@ -5,7 +5,7 @@ import time
 import itertools
 import os
 
-from multiprocessing import Process
+from multiprocessing import Pool
 
 # constants
 num_crops = 5
@@ -15,9 +15,7 @@ num_plots = 16 #4x4
 N = 10
 
 plot_distribution = np.genfromtxt("distribution.csv",delimiter=',',autostrip=True)
-
-# generating input data of crops
-np.random.seed(int(time.time()))
+# generating input data of crops np.random.seed(int(time.time()))
 def crop_numbers(num_crops):
     tmp = np.random.rand(num_crops)
     tmp = tmp/np.sum(tmp)
@@ -43,7 +41,6 @@ def greedy_output(dist, perm, cropi):
     return metric, j_dist
 
 
-open("data.csv", "w+").close()
 def generate_data(iterations): 
     for iteration in iterations:
         max_metric = 0
@@ -56,7 +53,7 @@ def generate_data(iterations):
                 max_metric = j_metric
                 max_dist = j_dist
 
-        with open("data"+str(os.getpid())+".csv", "a+") as f:
+        with open("data/data"+str(os.getpid())+".csv", "a+") as f:
             for crop in i_crop:
                 f.write(str(crop) + ",")
             for dist in max_dist:
@@ -65,7 +62,6 @@ def generate_data(iterations):
 
 
 if __name__ == '__main__':
-    for i in range(10):
-        p = Process(target=generate_data, args=([range(10)]))
-        p.start()
-        p.join()
+    pool = Pool(processes=5)
+    inp_array = [range(10) for i in range(10)]
+    pool.map(generate_data, inp_array)
