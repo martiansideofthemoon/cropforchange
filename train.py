@@ -29,9 +29,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 FLAGS = None
-LAYER_SIZE = 100
+LAYER_SIZE = 500
 LEARNING_RATE = 0.05
-EPOCHS = 15
+EPOCHS = 10
 DECAY = 0.97
 NUM_BATCHES = 50
 
@@ -43,13 +43,16 @@ def load_data(data_dir, num_crops, filename, plot):
   outputs = []
   for d in data:
     inputs.append(map(int, d[:num_crops]))
-    output = d[5 + plot]
-    if output == "None":
-      one_hot = [0.2]*num_crops
-    else:
-      one_hot = [0]*num_crops
-      one_hot[int(output)] = 1
-    outputs.append(one_hot)
+    one_hot_total = []
+    for i in range(5, 5+plot):
+      output = d[i]
+      if output == "None":
+        one_hot = [0.2]*num_crops
+      else:
+        one_hot = [0]*num_crops
+        one_hot[int(output)] = 1
+      one_hot_total.extend(one_hot)
+    outputs.append(one_hot_total)
   inputs = np.array(inputs, dtype=np.float32)
   sum_arr = np.sum(inputs, axis=1)
   outputs = np.array(outputs)
@@ -67,49 +70,60 @@ def main(_):
   b1 = tf.Variable(tf.zeros([LAYER_SIZE]))
   y1 = tf.matmul(x, W1) + b1
   y1 = tf.sigmoid(y1)
-  W3 = tf.Variable(tf.zeros([LAYER_SIZE, num_crops]))
-  b3 = tf.Variable(tf.zeros([num_crops]))
+  W3 = tf.Variable(tf.zeros([LAYER_SIZE, num_crops*num_plots]))
+  b3 = tf.Variable(tf.zeros([num_crops*num_plots]))
   y = tf.matmul(y1, W3) + b3
-  probs = tf.nn.softmax(y)
+  y = tf.sigmoid(y)
 
-  y_ = tf.placeholder(tf.float32, [None, num_crops])
-  cross_entropy = tf.reduce_mean(
-                    tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y))
+  probabilities = []
+  for i in range(0, num_plots):
+    probabilities.append(tf.nn.softmax(y[:,i*num_crops:(i+1)*num_crops]))
+
+  y_ = tf.placeholder(tf.float32, [None, num_crops*num_plots])
+  cross_entropy_total = tf.reduce_mean(
+                    tf.nn.softmax_cross_entropy_with_logits(
+                    labels=y_[:,0:num_crops],
+                    logits=y[:,0:num_crops]))
+  for i in range(1, num_plots):
+    cross_entropy = tf.reduce_mean(
+            tf.nn.softmax_cross_entropy_with_logits(
+              labels=y_[:,i*num_crops:(i+1)*num_crops],
+              logits=y[:,i*num_crops:(i+1)*num_crops]))
+    cross_entropy_total = tf.add(cross_entropy, cross_entropy_total)
+  cross_entropy_total = tf.mul(cross_entropy_total, 1.0/num_plots)
   lr = tf.Variable(0.0, trainable=False)
-  train_step = tf.train.AdamOptimizer(lr).minimize(cross_entropy)
+  train_step = tf.train.AdamOptimizer(lr).minimize(cross_entropy_total)
   # Train
-
-  losses = []
   probability = []
+  probability2 = []
+  logits = []
   with tf.Session() as sess:
-    for plot in range(num_plots):
-      sess.run(tf.initialize_all_variables())
-      inputs, outputs = load_data(FLAGS.data_dir, FLAGS.num_crops, 'data_train.csv', plot)
-      eval_inputs, eval_outputs = load_data(FLAGS.data_dir, FLAGS.num_crops, 'data_eval.csv', plot)
-      points = []
-      losses.append(0)
-      probability.append([])
-      print "Solving for plot " + str(plot)
-      for i in range(EPOCHS):
-        sess.run(tf.assign(lr, LEARNING_RATE * (DECAY ** i)))
-        for j in range(NUM_BATCHES):
-          batch_size = int(len(inputs)/float(NUM_BATCHES))
-          batch_xs = inputs[j*batch_size:(j+1)*batch_size,:]
-          batch_ys = outputs[j*batch_size:(j+1)*batch_size,:]
-          _, loss = sess.run([train_step, cross_entropy], feed_dict={x: batch_xs, y_: batch_ys})
-          #print "The loss for iteration " + str(i*NUM_BATCHES + j) + " is " + str(loss)
-          points.append([i*NUM_BATCHES + j, loss])
-        correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
-        accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-        acc = sess.run(accuracy, feed_dict={x: eval_inputs, y_: eval_outputs})
-        print "Accuracy for plot " + str(plot) + " and epoch " + str(i) + " is " + str(acc)
-        losses[plot] = acc
-        probability[plot] = sess.run(probs, feed_dict={x: eval_inputs, y_: eval_outputs})
+    sess.run(tf.initialize_all_variables())
+    inputs, outputs = load_data(FLAGS.data_dir, FLAGS.num_crops, 'data_train.csv', num_plots)
+    eval_inputs, eval_outputs = load_data(FLAGS.data_dir, FLAGS.num_crops, 'data_eval.csv', num_plots)
+    points = []
+    for i in range(EPOCHS):
+      sess.run(tf.assign(lr, LEARNING_RATE * (DECAY ** i)))
+      for j in range(NUM_BATCHES):
+        batch_size = int(len(inputs)/float(NUM_BATCHES))
+        batch_xs = inputs[j*batch_size:(j+1)*batch_size,:]
+        batch_ys = outputs[j*batch_size:(j+1)*batch_size,:]
+        _, loss = sess.run([train_step, cross_entropy_total], feed_dict={x: batch_xs, y_: batch_ys})
+        #print "The loss for iteration " + str(i*NUM_BATCHES + j) + " is " + str(loss)
+        points.append([i*NUM_BATCHES + j, loss])
+      correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
+      accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+      acc = sess.run(accuracy, feed_dict={x: eval_inputs, y_: eval_outputs})
+      print "Epoch " + str(i) + " has loss " + str(loss)
+    probability = sess.run(probabilities, feed_dict={x: [[3.2,3.2,3.2,3.2,3.2]]})
+    probability2 = sess.run(probabilities, feed_dict={x: [[1,1,1,1,1]]})
+    logits = sess.run(y, feed_dict={x: [[3.2,3.2,3.2,3.2,3.2]]})
+  np.savetext("predict.csv", probability, delimiter=",")
+  # import pdb
+  # pdb.set_trace()
   # points = np.array(points)
   # plt.plot(points[:,0],points[:,1],linewidth=2.0)
   # plt.show()
-    import pdb
-    pdb.set_trace()
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
