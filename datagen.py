@@ -39,11 +39,12 @@ def greedy_output(dist, perm, cropi):
             metric += dist[j, j_dist[j]]
     return metric, j_dist
 
-max_metric = 0
-max_dist = None
 
 open("data.csv", "w+").close()
 for iterations in range(N):
+    max_metric = 0
+    max_dist = None
+
     i_crop = crop_numbers(num_crops)
     for permutation in itertools.permutations(range(num_crops)):
         j_metric, j_dist = greedy_output(plot_distribution, permutation, i_crop)
