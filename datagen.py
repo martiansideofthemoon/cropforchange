@@ -3,6 +3,9 @@
 import numpy as np
 import time
 import itertools
+import os
+
+from multiprocessing import Process
 
 # constants
 num_crops = 5
@@ -41,20 +44,28 @@ def greedy_output(dist, perm, cropi):
 
 
 open("data.csv", "w+").close()
-for iterations in range(N):
-    max_metric = 0
-    max_dist = None
+def generate_data(iterations): 
+    for iteration in iterations:
+        max_metric = 0
+        max_dist = None
 
-    i_crop = crop_numbers(num_crops)
-    for permutation in itertools.permutations(range(num_crops)):
-        j_metric, j_dist = greedy_output(plot_distribution, permutation, i_crop)
-        if j_metric > max_metric:
-            max_metric = j_metric
-            max_dist = j_dist
+        i_crop = crop_numbers(num_crops)
+        for permutation in itertools.permutations(range(num_crops)):
+            j_metric, j_dist = greedy_output(plot_distribution, permutation, i_crop)
+            if j_metric > max_metric:
+                max_metric = j_metric
+                max_dist = j_dist
 
-    with open("data.csv", "a+") as f:
-        for crop in i_crop:
-            f.write(str(crop) + ",")
-        for dist in max_dist:
-            f.write(str(dist) + ",")
-        f.write("\n")
+        with open("data"+str(os.getpid())+".csv", "a+") as f:
+            for crop in i_crop:
+                f.write(str(crop) + ",")
+            for dist in max_dist:
+                f.write(str(dist) + ",")
+            f.write("\n")
+
+
+if __name__ == '__main__':
+    for i in range(10):
+        p = Process(target=generate_data, args=([range(10)]))
+        p.start()
+        p.join()
