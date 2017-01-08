@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Copyright 2015 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,33 +32,10 @@ import matplotlib.pyplot as plt
 FLAGS = None
 LAYER_SIZE = 500
 LEARNING_RATE = 0.05
-EPOCHS = 30
+EPOCHS = 50
 DECAY = 0.97
 NUM_BATCHES = 50
 
-def load_data(data_dir, num_crops, filename, plot):
-  with open(os.path.join(data_dir, filename), 'r') as f:
-    data = f.readlines()
-  data = [x.split(',')[:-1] for x in data]
-  inputs = []
-  outputs = []
-  for d in data:
-    inputs.append(map(int, d[:num_crops]))
-    one_hot_total = []
-    for i in range(5, 5+plot):
-      output = d[i]
-      if output == "None":
-        one_hot = [0.2]*num_crops
-      else:
-        one_hot = [0]*num_crops
-        one_hot[int(output)] = 1
-      one_hot_total.extend(one_hot)
-    outputs.append(one_hot_total)
-  inputs = np.array(inputs, dtype=np.float32)
-  sum_arr = np.sum(inputs, axis=1)
-  outputs = np.array(outputs)
-  inputs = inputs / sum_arr[:, None]
-  return inputs, outputs
 
 def main(_):
   # Import data
@@ -95,42 +73,27 @@ def main(_):
   train_step = tf.train.AdamOptimizer(lr).minimize(cross_entropy_total)
   # Train
   probability = []
-  probability2 = []
-  logits = []
+
   with tf.Session() as sess:
     sess.run(tf.initialize_all_variables())
     saver = tf.train.Saver(tf.all_variables())
-    inputs, outputs = load_data(FLAGS.data_dir, FLAGS.num_crops, 'data_train.csv', num_plots)
-    eval_inputs, eval_outputs = load_data(FLAGS.data_dir, FLAGS.num_crops, 'data_eval.csv', num_plots)
-    points = []
-    for i in range(EPOCHS):
-      sess.run(tf.assign(lr, LEARNING_RATE * (DECAY ** i)))
-      for j in range(NUM_BATCHES):
-        batch_size = int(len(inputs)/float(NUM_BATCHES))
-        batch_xs = inputs[j*batch_size:(j+1)*batch_size,:]
-        batch_ys = outputs[j*batch_size:(j+1)*batch_size,:]
-        _, loss = sess.run([train_step, cross_entropy_total], feed_dict={x: batch_xs, y_: batch_ys})
-        #print "The loss for iteration " + str(i*NUM_BATCHES + j) + " is " + str(loss)
-        points.append([i*NUM_BATCHES + j, loss])
-      correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
-      accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-      acc = sess.run(accuracy, feed_dict={x: eval_inputs, y_: eval_outputs})
-      print "Epoch " + str(i) + " has loss " + str(loss)
-    saver.save(sess, "save/model.ckpt", global_step=i)
-    probability = sess.run(probabilities, feed_dict={x: [[3.2,3.2,3.2,3.2,3.2]]})
-    probability2 = sess.run(probabilities, feed_dict={x: [[1,1,1,1,1]]})
-    logits = sess.run(y, feed_dict={x: [[3.2,3.2,3.2,3.2,3.2]]})
+    ckpt = tf.train.get_checkpoint_state("save")
+    saver.restore(sess, ckpt.model_checkpoint_path)
+    data = [float(q) for q in FLAGS.data.split(",")]
+    data = [q/16 for q in data]
+    data = np.array([data], dtype=np.float32)
+    print data
+    probability = sess.run(probabilities, feed_dict={x: data})
+  output = ""
   for i in probability:
-    print ",".join(map(str,i.tolist()[0]))
-  # import pdb
-  # pdb.set_trace()
-  points = np.array(points)
-  plt.plot(points[:,0],points[:,1],linewidth=2.0)
-  plt.show()
+    output += ",".join(map(str,i.tolist()[0])) + "\n"
+  print output
+  with open("distribution3.csv", "w") as f:
+    f.write(output)
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
-  parser.add_argument('--data_dir', type=str, default='data',
+  parser.add_argument('--data', type=str, default='3,3,3,3,3',
                       help='Directory for storing input data')
   parser.add_argument('--num_crops', type=int, default=5,
                    help='Number of crops')
