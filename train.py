@@ -73,7 +73,7 @@ def main(_):
   W3 = tf.Variable(tf.zeros([LAYER_SIZE, num_crops*num_plots]))
   b3 = tf.Variable(tf.zeros([num_crops*num_plots]))
   y = tf.matmul(y1, W3) + b3
-  y = tf.sigmoid(y)
+  #y = tf.sigmoid(y)
 
   probabilities = []
   for i in range(0, num_plots):
@@ -118,7 +118,8 @@ def main(_):
     probability = sess.run(probabilities, feed_dict={x: [[3.2,3.2,3.2,3.2,3.2]]})
     probability2 = sess.run(probabilities, feed_dict={x: [[1,1,1,1,1]]})
     logits = sess.run(y, feed_dict={x: [[3.2,3.2,3.2,3.2,3.2]]})
-  np.savetext("predict.csv", probability, delimiter=",")
+  for i in probability:
+    print ",".join(map(str,i.tolist()[0]))
   # import pdb
   # pdb.set_trace()
   # points = np.array(points)
