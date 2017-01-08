@@ -80,6 +80,7 @@ def main(_):
   # Train
 
   losses = []
+  probability = []
   with tf.Session() as sess:
     for plot in range(num_plots):
       sess.run(tf.initialize_all_variables())
@@ -87,6 +88,7 @@ def main(_):
       eval_inputs, eval_outputs = load_data(FLAGS.data_dir, FLAGS.num_crops, 'data_eval.csv', plot)
       points = []
       losses.append(0)
+      probability.append([])
       print "Solving for plot " + str(plot)
       for i in range(EPOCHS):
         sess.run(tf.assign(lr, LEARNING_RATE * (DECAY ** i)))
@@ -100,8 +102,9 @@ def main(_):
         correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
         acc = sess.run(accuracy, feed_dict={x: eval_inputs, y_: eval_outputs})
-        print acc
+        print "Accuracy for plot " + str(plot) + " and epoch " + str(i) + " is " + str(acc)
         losses[plot] = acc
+        probability[plot] = sess.run(probs)
   # points = np.array(points)
   # plt.plot(points[:,0],points[:,1],linewidth=2.0)
   # plt.show()
