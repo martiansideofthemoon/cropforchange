@@ -104,7 +104,7 @@ def main(_):
         acc = sess.run(accuracy, feed_dict={x: eval_inputs, y_: eval_outputs})
         print "Accuracy for plot " + str(plot) + " and epoch " + str(i) + " is " + str(acc)
         losses[plot] = acc
-        probability[plot] = sess.run(probs)
+        probability[plot] = sess.run(probs, feed_dict={x: eval_inputs, y_: eval_outputs})
   # points = np.array(points)
   # plt.plot(points[:,0],points[:,1],linewidth=2.0)
   # plt.show()
