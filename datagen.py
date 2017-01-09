@@ -15,6 +15,7 @@ num_plots = 16 #4x4
 N = 10
 
 plot_distribution = np.genfromtxt("distribution.csv",delimiter=',',autostrip=True)
+print plot_distribution
 # generating input data of crops np.random.seed(int(time.time()))
 def crop_numbers(num_crops):
     tmp = np.random.rand(num_crops)
@@ -63,5 +64,5 @@ def generate_data(iterations):
 
 if __name__ == '__main__':
     pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
-    inp_array = [range(100) for i in range(100)]
+    inp_array = [range(1) for i in range(1)]
     pool.map(generate_data, inp_array)

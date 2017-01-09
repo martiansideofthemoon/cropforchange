@@ -1,0 +1,52 @@
+body{
+    font-family:calibri, sans-serif;
+    font-size:12px;
+}
+#document{
+    background:rgb(240,240,240);
+    height:100vh;
+}
+
+#header{
+    height:70px;
+    background:rgb(63, 98, 255);
+    padding:10px;
+}
+
+#header-buttons{
+    font-size:2em;
+    margin:2.5px 10px;;
+}
+
+#header-buttons button{
+    background:rgb(63, 98, 255);
+    border:black solid 2px;
+}
+
+#legend{
+    position:absolute;
+    right:0px;
+    top:50vh;
+    width:200px;
+}
+
+#legend table tr td{
+    padding:10px;
+}
+
+#overlay{
+    position:fixed;
+    top:0px;
+    bottom:0px;
+    left:0px;
+    right:0px;
+    background:rgba(0,0,0,0.4);
+}
+
+#overlay-content{
+    width:500px;
+    margin:100px auto;
+    background:white;
+    border-radius:5px;
+    padding:10px;
+}
