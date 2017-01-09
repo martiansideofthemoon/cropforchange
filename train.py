@@ -31,7 +31,7 @@ import matplotlib.pyplot as plt
 FLAGS = None
 LAYER_SIZE = 500
 LEARNING_RATE = 0.05
-EPOCHS = 30
+EPOCHS = 10
 DECAY = 0.97
 NUM_BATCHES = 50
 
